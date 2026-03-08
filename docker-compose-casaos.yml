@@ -1,6 +1,6 @@
 services:
   server:
-    image: ghcr.io/moifort/transparent:main
+    image: moifort/transparent:latest
     container_name: transparent-server
     restart: unless-stopped
     environment:
@@ -31,7 +31,7 @@ x-casaos:
   category: Utility
   developer: ""
   author: ""
-  icon: https://raw.githubusercontent.com/moifort/transparent/main/casaos/icon.png
+  icon: https://raw.githubusercontent.com/moifort/transparent/main/icon.png
   port_map: "3000"
   scheme: http
   architectures:
