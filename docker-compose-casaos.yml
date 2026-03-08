@@ -1,0 +1,39 @@
+services:
+  server:
+    image: username/transparent:latest
+    container_name: transparent-server
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: "3000"
+      NITRO_API_TOKEN: ${NITRO_API_TOKEN}
+      NITRO_MAX_FILE_SIZE_MB: ${NITRO_MAX_FILE_SIZE_MB:-10}
+      NITRO_SERVER_URL: http://127.0.0.1:3000
+    ports:
+      - target: 3000
+        published: "3000"
+        protocol: tcp
+    tmpfs:
+      - /tmp:size=512M
+
+x-casaos:
+  main: server
+  store_app_id: transparent
+  title:
+    en_us: Transparent
+  tagline:
+    en_us: Remove image backgrounds via API
+  description:
+    en_us: >-
+      HTTP API to remove image backgrounds. Send an image, get back a PNG with
+      the background removed. Supports PNG, JPEG, and WebP inputs. Optional API
+      token authentication.
+  category: Utility
+  developer: ""
+  author: ""
+  icon: https://raw.githubusercontent.com/moifort/transparent/main/casaos/icon.png
+  port_map: "3000"
+  scheme: http
+  architectures:
+    - amd64
+    - arm64
