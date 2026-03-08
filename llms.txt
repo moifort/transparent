@@ -1,0 +1,11 @@
+# transparent
+
+> HTTP API to remove image backgrounds. Send an image, get back a PNG with the background removed.
+
+- Base URL: `http://localhost:3000` (dev) or your deployed domain
+- Auth: `Authorization: Bearer <token>` header (only when `NITRO_API_TOKEN` is set)
+- `/health` is always public (no auth)
+
+## Docs
+
+- [Full API reference](llms-full.txt): Complete endpoint documentation with request/response formats, error codes, and code examples in TypeScript and Swift

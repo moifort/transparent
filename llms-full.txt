@@ -1,0 +1,133 @@
+# transparent
+
+> HTTP API to remove image backgrounds. Send an image, get back a PNG with the background removed.
+
+## Authentication
+
+Authentication is **optional** — it activates only when the `NITRO_API_TOKEN` environment variable is set.
+
+- When active, every request (except `GET /health`) must include the header:
+  ```
+  Authorization: Bearer <token>
+  ```
+- `GET /health` is always public, even when a token is configured.
+- A missing or invalid token returns `401 Unauthorized`.
+
+## Endpoints
+
+### GET /health
+
+Health check. Always public.
+
+**Request:** no body, no query parameters.
+
+**Response:**
+
+```json
+{ "status": "ok" }
+```
+
+### POST /remove-background
+
+Remove the background from an image.
+
+**Request:** `Content-Type: multipart/form-data`
+
+| Field   | Type   | Required | Description            |
+|---------|--------|----------|------------------------|
+| `image` | file   | yes      | The image to process   |
+
+Supported MIME types: `image/png`, `image/jpeg`, `image/webp`.
+
+Max file size: 10 MB by default (configurable via `NITRO_MAX_FILE_SIZE_MB`).
+
+**Success response:** `200 OK`
+
+- `Content-Type: image/png`
+- Body: PNG binary data (the image with background removed)
+
+**Error responses:**
+
+| Status | Condition                                          | statusMessage example                                |
+|--------|----------------------------------------------------|------------------------------------------------------|
+| 400    | Request is not multipart form data                 | `Expected multipart form data`                       |
+| 400    | Missing `image` field                              | `Missing "image" field`                              |
+| 400    | Unsupported MIME type                              | `Unsupported format: image/gif. Supported: png, jpeg, webp` |
+| 401    | Token required but missing/invalid                 | `Unauthorized`                                       |
+| 413    | File exceeds max size                              | `File too large. Max: 10MB`                          |
+| 422    | Background removal processing failed               | `Processing failed: <detail>`                        |
+
+## TypeScript example
+
+```typescript
+async function removeBackground(
+  imageBuffer: Buffer,
+  options?: { baseUrl?: string; token?: string }
+): Promise<Buffer> {
+  const { baseUrl = 'http://localhost:3000', token } = options ?? {}
+
+  const form = new FormData()
+  form.append('image', new Blob([imageBuffer]), 'image.png')
+
+  const headers: Record<string, string> = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
+  const response = await fetch(`${baseUrl}/remove-background`, {
+    method: 'POST',
+    body: form,
+    headers,
+  })
+
+  if (!response.ok) {
+    throw new Error(`Remove background failed: ${response.status} ${response.statusText}`)
+  }
+
+  return Buffer.from(await response.arrayBuffer())
+}
+```
+
+## Swift example
+
+```swift
+func removeBackground(
+    imageData: Data,
+    baseURL: String = "http://localhost:3000",
+    token: String? = nil
+) async throws -> Data {
+    let url = URL(string: "\(baseURL)/remove-background")!
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+
+    if let token {
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+    }
+
+    let boundary = UUID().uuidString
+    request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+    var body = Data()
+    body.append("--\(boundary)\r\n".data(using: .utf8)!)
+    body.append("Content-Disposition: form-data; name=\"image\"; filename=\"image.png\"\r\n".data(using: .utf8)!)
+    body.append("Content-Type: image/png\r\n\r\n".data(using: .utf8)!)
+    body.append(imageData)
+    body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+    request.httpBody = body
+
+    let (data, response) = try await URLSession.shared.data(for: request)
+
+    guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+        throw URLError(.badServerResponse, userInfo: [
+            NSLocalizedDescriptionKey: "Remove background failed: \(statusCode)"
+        ])
+    }
+
+    return data
+}
+```
+
+## Integration notes
+
+- The output is always a PNG, regardless of the input format.
+- Use a timeout of at least 30 seconds — large images take longer to process.
+- The server must be reachable from the client (check firewall/network if running on a different host).

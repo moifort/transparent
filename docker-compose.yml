@@ -1,0 +1,15 @@
+services:
+  server:
+    image: username/transparent:latest
+    container_name: transparent-server
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: "3000"
+      NITRO_API_TOKEN: ${NITRO_API_TOKEN}
+      NITRO_MAX_FILE_SIZE_MB: ${NITRO_MAX_FILE_SIZE_MB:-10}
+      NITRO_SERVER_URL: http://127.0.0.1:3000
+    ports:
+      - "3000:3000"
+    tmpfs:
+      - /tmp:size=512M
