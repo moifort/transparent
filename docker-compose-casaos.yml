@@ -1,6 +1,6 @@
 services:
   server:
-    image: username/transparent:latest
+    image: ghcr.io/moifort/transparent:main
     container_name: transparent-server
     restart: unless-stopped
     environment:
